@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Category</p>
+  <h1>{{ category.name }}</h1>
+  <p class="lede">Browse published items in this category.</p>
+</section>
+
+<section class="grid">
+  {% for drop in drops %}
+      <article class="card">
+        <a href="/drop/{{ drop.id }}">
+          <div class="card-photo">
+          {% if drop.cover_photo_url %}
+            <img src="{{ drop.cover_photo_url }}" alt="Drop photo">
+          {% else %}
+            <div class="photo-placeholder">No photo yet</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <p class="meta">{{ drop.category.name if drop.category else category.name }}</p>
+          <h3>{{ drop.title or ("Drop #" ~ drop.id) }}</h3>
+          {% if drop.status.value == "sold" %}
+            <p class="status-badge sold">Sold</p>
+          {% endif %}
+          {% if drop.price is not none %}
+            <p class="price">${{ "%.2f"|format(drop.price) }}</p>
+          {% endif %}
+        </div>
+      </a>
+    </article>
+  {% else %}
+    <p class="empty">No published drops in this category yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

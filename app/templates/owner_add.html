@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="owner-shell">
+  {% if success %}
+    <div class="owner-success">Published ✅ Add another item</div>
+  {% endif %}
+
+  <div class="owner-head">
+    <p class="eyebrow">Owner</p>
+    <h1>Add item</h1>
+  </div>
+
+  <div class="workflow-steps">
+    <div>Add Item</div>
+    <div>Take Photos</div>
+    <div>Description</div>
+    <div>Price</div>
+    <div>Category</div>
+    <div>Save Draft</div>
+  </div>
+
+  <form class="owner-form" method="post" action="/owner/add/{{ owner_secret }}" enctype="multipart/form-data">
+    <div class="upload-card owner-upload">
+      <div class="upload-copy">
+        <p class="upload-title">Take Photos</p>
+        <p class="upload-note">Use the camera when possible. Add 1-5 photos.</p>
+      </div>
+      <label class="file-picker">
+        <span>Upload photos</span>
+        <input type="file" name="photos" accept="image/*" capture="environment" multiple required>
+      </label>
+    </div>
+
+    <label>
+      <span>Description</span>
+      <textarea name="description" rows="5" placeholder="Optional"></textarea>
+    </label>
+
+    <label>
+      <span>Price</span>
+      <div class="price-field">
+        <span class="price-prefix">$</span>
+        <input type="text" name="price" inputmode="numeric" pattern="[0-9]*" placeholder="24">
+      </div>
+    </label>
+
+    <label>
+      <span>Category</span>
+      <select name="category_id" required>
+        {% for category in active_categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      <span>Title</span>
+      <input type="text" name="title" placeholder="Optional">
+    </label>
+
+    <button class="button primary owner-button" type="submit">Publish</button>
+  </form>
+</section>
+{% endblock %}

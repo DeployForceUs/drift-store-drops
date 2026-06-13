@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Admin</p>
+  <h1>{{ page_title }}</h1>
+  <p class="lede">Save the drop as a draft first. Publishing happens from the admin dashboard.</p>
+</section>
+
+<section class="form-card">
+  <form class="drop-form" method="post" action="{{ form_action }}" enctype="multipart/form-data">
+    <div class="upload-card">
+      <div class="upload-copy">
+        <p class="upload-title">Photos</p>
+        <p class="upload-note">Take 1-5 photos. The first photo becomes the cover image.</p>
+      </div>
+      {% if drop and drop.photo_urls %}
+        <div class="photo-strip">
+          {% for photo_url in drop.photo_urls %}
+            <a class="thumb" href="{{ photo_url }}" target="_blank" rel="noreferrer">
+              <img src="{{ photo_url }}" alt="Drop photo {{ loop.index }}">
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <label class="upload-button">
+        <input
+          id="photo-input"
+          type="file"
+          name="photos"
+          accept="image/*"
+          capture="environment"
+          multiple
+        >
+        <span>📷 Add Photos</span>
+      </label>
+      <div class="upload-preview" id="photo-preview" hidden>
+        <div class="upload-preview-head">
+          <p class="upload-preview-title">Selected photos</p>
+          <p class="upload-counter" id="photo-counter"></p>
+        </div>
+        <div class="photo-strip" id="photo-preview-strip"></div>
+      </div>
+      {% if drop and drop.photo_urls %}
+        <p class="upload-note">Leave empty to keep the current photos.</p>
+      {% endif %}
+    </div>
+
+    <label>
+      <span>Description</span>
+      <textarea name="description" rows="6" placeholder="Short item description">{{ drop.description if drop and drop.description else '' }}</textarea>
+    </label>
+
+    <label>
+      <span>Price</span>
+      <div class="price-field">
+        <span class="price-prefix">$</span>
+        <input
+          type="text"
+          name="price"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="18"
+          value="{{ drop.price if drop and drop.price is not none else '' }}"
+        >
+      </div>
+    </label>
+
+    <label>
+      <span>Category</span>
+      <select id="category-select" name="category_id" required>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if drop and drop.category_id == category.id %}selected{% endif %}>
+            {{ category.name }}
+            {% if not category.is_active %}(inactive){% endif %}
+          </option>
+        {% endfor %}
+        <option value="__new__">+ Add new category</option>
+      </select>
+    </label>
+
+    <div class="inline-category" id="inline-category" hidden style="display:none;">
+      <label>
+        <span>New category name</span>
+        <input id="new-category-name" type="text" name="new_category_name" placeholder="E.g. Lamps">
+      </label>
+      <button class="button secondary small" id="new-category-add" type="button">Add</button>
+      <p class="upload-note" id="new-category-note">Adds the category and selects it for this item.</p>
+    </div>
+
+    <div class="actions">
+      <button class="button primary" type="submit">Save Draft</button>
+      <a class="button secondary" href="/admin">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('photo-input');
+    const preview = document.getElementById('photo-preview');
+    const previewStrip = document.getElementById('photo-preview-strip');
+    const counter = document.getElementById('photo-counter');
+    const categorySelect = document.getElementById('category-select');
+    const inlineCategory = document.getElementById('inline-category');
+    const newCategoryName = document.getElementById('new-category-name');
+    const newCategoryAdd = document.getElementById('new-category-add');
+    const newCategoryNote = document.getElementById('new-category-note');
+
+    if (!input || !preview || !previewStrip || !counter) return;
+
+    const renderPreview = () => {
+      const files = Array.from(input.files || []);
+      previewStrip.innerHTML = '';
+
+      if (!files.length) {
+        preview.hidden = true;
+        counter.textContent = '';
+        return;
+      }
+
+      counter.textContent = files.length === 1 ? '1 photo selected' : `${files.length} photos selected`;
+      files.forEach((file) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'thumb';
+
+        const image = document.createElement('img');
+        image.alt = file.name || 'Selected photo';
+        image.loading = 'lazy';
+
+        const objectUrl = URL.createObjectURL(file);
+        image.src = objectUrl;
+        image.onload = () => URL.revokeObjectURL(objectUrl);
+
+        wrapper.appendChild(image);
+        previewStrip.appendChild(wrapper);
+      });
+
+      preview.hidden = false;
+    };
+
+    input.addEventListener('change', renderPreview);
+
+    if (categorySelect && inlineCategory && newCategoryName && newCategoryAdd) {
+      const toggleInlineCategory = () => {
+        const shouldShow = categorySelect.value === '__new__';
+        inlineCategory.hidden = !shouldShow;
+        inlineCategory.style.display = shouldShow ? 'grid' : 'none';
+        if (shouldShow) {
+          newCategoryName.focus();
+        } else {
+          newCategoryName.value = '';
+          if (newCategoryNote) {
+            newCategoryNote.textContent = 'Adds the category and selects it for this item.';
+          }
+        }
+      };
+
+      inlineCategory.hidden = true;
+      inlineCategory.style.display = 'none';
+
+      const addCategory = async () => {
+        const name = newCategoryName.value.trim();
+        if (!name) {
+          if (newCategoryNote) {
+            newCategoryNote.textContent = 'Enter a category name first.';
+          }
+          return;
+        }
+
+        newCategoryAdd.disabled = true;
+        if (newCategoryNote) {
+          newCategoryNote.textContent = 'Adding category...';
+        }
+
+        try {
+          const response = await fetch('/admin/categories/new', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'Accept': 'application/json',
+              'X-Requested-With': 'fetch',
+            },
+            body: new URLSearchParams({ name }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to add category');
+          }
+
+          const category = await response.json();
+          const option = document.createElement('option');
+          option.value = String(category.id);
+          option.textContent = category.name;
+          option.selected = true;
+          const addNewOption = categorySelect.querySelector('option[value="__new__"]');
+          if (addNewOption) {
+            categorySelect.insertBefore(option, addNewOption);
+          } else {
+            categorySelect.appendChild(option);
+          }
+          categorySelect.value = String(category.id);
+          toggleInlineCategory();
+          if (newCategoryNote) {
+            newCategoryNote.textContent = 'Category added and selected for this item.';
+          }
+        } catch (error) {
+          if (newCategoryNote) {
+            newCategoryNote.textContent = error.message || 'Failed to add category.';
+          }
+        } finally {
+          newCategoryAdd.disabled = false;
+        }
+      };
+
+      categorySelect.addEventListener('change', toggleInlineCategory);
+      newCategoryAdd.addEventListener('click', addCategory);
+      toggleInlineCategory();
+    }
+  });
+</script>
+{% endblock %}

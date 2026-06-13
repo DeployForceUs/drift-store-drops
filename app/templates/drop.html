@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="drop-detail">
+  <div class="drop-media">
+    {% if drop.cover_photo_url %}
+      <img src="{{ drop.cover_photo_url }}" alt="Drop photo">
+    {% else %}
+      <div class="photo-placeholder large">No photo yet</div>
+    {% endif %}
+  </div>
+
+  <div class="drop-copy">
+    <p class="eyebrow">{{ drop.category.name if drop.category else "Unassigned" }}</p>
+    <h1>{{ drop.title or ("Drop #" ~ drop.id) }}</h1>
+    {% if drop.status.value == "sold" %}
+      <p class="status-badge sold">Sold</p>
+      <div class="status-card sold-state">
+        <strong>This item has sold.</strong>
+        <span>Browse the next arrivals below.</span>
+      </div>
+    {% endif %}
+    <p class="detail-line"><strong>Status:</strong> {{ drop.status.value }}</p>
+    <p class="detail-line"><strong>Posted:</strong> {{ drop.published_at or drop.created_at }}</p>
+    {% if drop.price is not none %}
+      <p class="detail-line price"><strong>Price:</strong> ${{ "%.2f"|format(drop.price) }}</p>
+    {% endif %}
+    {% if drop.description %}
+      <p class="description">{{ drop.description }}</p>
+    {% endif %}
+
+    <div class="actions">
+      {% if is_open and drop.status.value != "sold" %}
+        <a class="button primary" href="tel:{{ store_settings.phone }}">Call Store</a>
+      {% elif drop.status.value == "sold" %}
+        <div class="button disabled">Sold</div>
+      {% else %}
+        <div class="button disabled">Store Closed</div>
+      {% endif %}
+      <a class="button secondary" href="{{ maps_url }}">Directions</a>
+    </div>
+
+    {% if not is_open %}
+      <div class="status-card closed">
+        <strong>The store is closed right now.</strong>
+        <span>Hours: {{ store_settings.open_time }} - {{ store_settings.close_time }} ({{ store_settings.timezone }})</span>
+      </div>
+    {% endif %}
+
+    {% if drop.photo_urls|length > 1 %}
+      <div class="photo-strip detail-strip">
+        {% for photo_url in drop.photo_urls %}
+          <a class="thumb" href="{{ photo_url }}" target="_blank" rel="noreferrer">
+            <img src="{{ photo_url }}" alt="Drop photo {{ loop.index }}">
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <p class="disclaimer">Call to confirm availability. Items may sell quickly.</p>
+  </div>
+</section>
+{% endblock %}

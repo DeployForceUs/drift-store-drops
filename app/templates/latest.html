@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Latest arrivals</p>
+  <h1>Newest published drops</h1>
+  <p class="lede">One batch at a time. Browse the newest items posted by the store.</p>
+</section>
+
+<section class="grid">
+  {% for drop in drops %}
+      <article class="card">
+        <a href="/drop/{{ drop.id }}">
+          <div class="card-photo">
+          {% if drop.cover_photo_url %}
+            <img src="{{ drop.cover_photo_url }}" alt="Drop photo">
+          {% else %}
+            <div class="photo-placeholder">No photo yet</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <p class="meta">{{ drop.category.name if drop.category else "Unassigned" }}</p>
+          <h3>{{ drop.title or ("Drop #" ~ drop.id) }}</h3>
+          {% if drop.status.value == "sold" %}
+            <p class="status-badge sold">Sold</p>
+          {% endif %}
+          {% if drop.description %}
+            <p class="snippet">{{ drop.description }}</p>
+          {% endif %}
+          {% if drop.price is not none %}
+            <p class="price">${{ "%.2f"|format(drop.price) }}</p>
+          {% endif %}
+        </div>
+      </a>
+    </article>
+  {% else %}
+    <p class="empty">No published drops yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Admin</p>
+  <h1>Drop management</h1>
+  <p class="lede">Create, publish, archive, and delete drops without leaving the phone-friendly admin screen.</p>
+  <div class="actions">
+    <a class="button primary" href="/admin/drops/new">Add Item</a>
+    <form class="inline-form" method="post" action="/admin/publish-all-drafts">
+      <button class="button secondary" type="submit">Publish All Drafts</button>
+    </form>
+    <form class="inline-form" method="post" action="/admin/reset-demo-data" onsubmit="return confirm('Reset demo data and clear all items?');">
+      <button class="button secondary" type="submit">Reset Demo Data</button>
+    </form>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <span>Drafts</span>
+    <strong>{{ counts.draft }}</strong>
+  </div>
+  <div class="stat">
+    <span>Published</span>
+    <strong>{{ counts.published }}</strong>
+  </div>
+  <div class="stat">
+    <span>Sold</span>
+    <strong>{{ counts.sold }}</strong>
+  </div>
+  <div class="stat">
+    <span>Archived</span>
+    <strong>{{ counts.archived }}</strong>
+  </div>
+</section>
+
+{% macro render_drop_list(title, drops, show_publish=False, show_mark_sold=False, show_archive=False) %}
+<section>
+  <div class="section-head">
+    <h2>{{ title }}</h2>
+    <span>{{ drops|length }} items</span>
+  </div>
+  <div class="admin-list">
+    {% for drop in drops %}
+      <article class="admin-row">
+        <div class="admin-row-photo">
+          {% if drop.cover_photo_url %}
+            <img src="{{ drop.cover_photo_url }}" alt="Cover photo">
+          {% else %}
+            <div class="photo-placeholder">No photo</div>
+          {% endif %}
+        </div>
+        <div class="admin-row-copy">
+          <p class="meta">{{ drop.category.name if drop.category else "Unassigned" }}</p>
+          <strong>{{ drop.title or ("Drop #" ~ drop.id) }}</strong>
+          {% if drop.status.value == "sold" %}
+            <p class="status-badge sold">Sold</p>
+          {% endif %}
+          <p>{{ drop.description or "No description yet" }}</p>
+          <p class="muted-line">
+            {% if drop.price is not none %}
+              ${{ "%.2f"|format(drop.price) }}
+            {% else %}
+              No price
+            {% endif %}
+            {% if drop.photo_count %}
+              · {{ drop.photo_count }} photo{% if drop.photo_count != 1 %}s{% endif %}
+            {% else %}
+              · No photos
+            {% endif %}
+          </p>
+        </div>
+        <div class="admin-row-actions">
+          <a class="button secondary small" href="/admin/drops/{{ drop.id }}/edit">Edit</a>
+          {% if show_publish %}
+            <form method="post" action="/admin/drops/{{ drop.id }}/publish">
+              <button class="button primary small" type="submit">Publish</button>
+            </form>
+          {% endif %}
+          {% if show_mark_sold %}
+            <form method="post" action="/admin/drops/{{ drop.id }}/sold">
+              <button class="button secondary small" type="submit">Mark Sold</button>
+            </form>
+          {% endif %}
+          {% if show_archive %}
+            <form method="post" action="/admin/drops/{{ drop.id }}/archive">
+              <button class="button secondary small" type="submit">Archive</button>
+            </form>
+          {% endif %}
+          <form method="post" action="/admin/drops/{{ drop.id }}/delete" onsubmit="return confirm('Delete this drop?');">
+            <button class="button danger small" type="submit">Delete</button>
+          </form>
+        </div>
+      </article>
+    {% else %}
+      <p class="empty">No {{ title|lower }} yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endmacro %}
+
+{{ render_drop_list("Draft", draft_drops, show_publish=True) }}
+{{ render_drop_list("Published", published_drops, show_mark_sold=True, show_archive=True) }}
+{{ render_drop_list("Sold", sold_drops, show_archive=True) }}
+{{ render_drop_list("Archived", archived_drops) }}
+
+<section class="settings-card">
+  <h2>Store settings</h2>
+  <p><strong>Phone:</strong> {{ store_settings.phone }}</p>
+  <p><strong>Address:</strong> {{ store_settings.address }}</p>
+  <p><strong>Hours:</strong> {{ store_settings.open_time }} - {{ store_settings.close_time }}</p>
+  <p><strong>Timezone:</strong> {{ store_settings.timezone }}</p>
+</section>
+{% endblock %}

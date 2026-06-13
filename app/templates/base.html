@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ store_settings.store_name if store_settings else "Drift Store Drops" }}</title>
+  <link rel="stylesheet" href="{{ request.url_for('static', path='styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Drift Store Drops</a>
+    <nav class="topnav">
+      <a href="/latest">Latest</a>
+      <a href="/admin">Admin</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>Call to confirm availability. Items may sell quickly.</p>
+  </footer>
+</body>
+</html>
