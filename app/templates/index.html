@@ -1,47 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">New arrivals, fast</p>
-  <h1>{{ store_settings.store_name }}</h1>
-  <p class="lede">Browse the latest drop photos, filter by category, and call the store if something catches your eye.</p>
-  <div class="actions">
-    <a class="button primary" href="/latest">View Latest Arrivals</a>
+<section class="hero hero-dark">
+  <p class="eyebrow">New arrivals today</p>
+  <h1>New Arrivals Today</h1>
+  <p class="lede">
+    {{ recent_count }} item{% if recent_count != 1 %}s{% endif %} posted in the last 24 hours.
+    Tap through fast-moving pieces before they disappear.
+  </p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <strong>{{ recent_count }}</strong>
+      <span>Recent items</span>
+    </div>
+    <div class="hero-stat">
+      <strong>{{ drops|length }}</strong>
+      <span>Visible now</span>
+    </div>
+  </div>
+  <div class="actions hero-actions">
+    <a class="button primary" href="#new-arrivals">View New Arrivals</a>
     <a class="button secondary" href="{{ maps_url }}">Directions</a>
   </div>
-  <div class="status-card {% if is_open %}open{% else %}closed{% endif %}">
-    {% if is_open %}
-      <strong>Store is open now</strong>
-      <span>Tap Call Store from any item page.</span>
-    {% else %}
-      <strong>Store is closed now</strong>
-      <span>Open hours: {{ store_settings.open_time }} - {{ store_settings.close_time }} ({{ store_settings.timezone }})</span>
-    {% endif %}
-  </div>
 </section>
 
-<section>
-  <div class="section-head">
-    <h2>Categories</h2>
-    <a href="/admin">Manage</a>
+<section id="new-arrivals" class="public-section">
+  <div class="section-head compact">
+    <div>
+      <p class="eyebrow">Filter</p>
+      <h2>New Arrivals</h2>
+    </div>
+    <span class="section-count">{{ drops|length }} items</span>
   </div>
-  <div class="chips">
-    {% for category in categories %}
-      <a class="chip" href="/category/{{ category.slug }}">{{ category.name }}</a>
-    {% else %}
-      <p class="empty">No categories yet.</p>
+  <div class="chips filter-chips">
+    <a class="chip {% if not selected_category_slug %}active{% endif %}" href="/">All</a>
+    {% for category in active_categories %}
+      <a class="chip {% if selected_category_slug == category.slug %}active{% endif %}" href="/?category={{ category.slug }}">{{ category.name }}</a>
     {% endfor %}
   </div>
-</section>
 
-<section>
-  <div class="section-head">
-    <h2>Latest Arrivals</h2>
-    <a href="/latest">See all</a>
-  </div>
-  <div class="grid">
+  <div class="grid product-grid">
     {% for drop in drops %}
-      <article class="card">
+      <article class="card product-card">
         <a href="/drop/{{ drop.id }}">
           <div class="card-photo">
             {% if drop.cover_photo_url %}
@@ -49,22 +49,66 @@
             {% else %}
               <div class="photo-placeholder">No photo yet</div>
             {% endif %}
+            <div class="card-badges">
+              {% if drop.published_at and drop.published_at >= recent_cutoff %}
+                <span class="status-badge new">NEW</span>
+              {% endif %}
+              {% if drop.status.value == "sold" %}
+                <span class="status-badge sold">SOLD</span>
+              {% endif %}
+            </div>
           </div>
           <div class="card-body">
             <p class="meta">{{ drop.category.name if drop.category else "Unassigned" }}</p>
             <h3>{{ drop.title or ("Drop #" ~ drop.id) }}</h3>
-            {% if drop.status.value == "sold" %}
-              <p class="status-badge sold">Sold</p>
+            {% if drop.description %}
+              <p class="snippet">{{ drop.description }}</p>
             {% endif %}
-            {% if drop.price is not none %}
-              <p class="price">${{ "%.2f"|format(drop.price) }}</p>
-            {% endif %}
+            <div class="card-footer">
+              {% if drop.price is not none %}
+                <p class="price">${{ "%.2f"|format(drop.price) }}</p>
+              {% endif %}
+              {% if drop.status.value == "sold" %}
+                <span class="card-pill sold">Sold</span>
+              {% endif %}
+            </div>
           </div>
         </a>
       </article>
     {% else %}
       <p class="empty">No published drops yet.</p>
     {% endfor %}
+  </div>
+</section>
+
+<section class="public-section">
+  <div class="section-head compact">
+    <div>
+      <p class="eyebrow">Browse</p>
+      <h2>Browse Categories</h2>
+    </div>
+  </div>
+  <div class="category-grid">
+    {% for category in active_categories %}
+      <a class="category-tile" href="/category/{{ category.slug }}">
+        <strong>{{ category.name }}</strong>
+        <span>Shop now</span>
+      </a>
+    {% else %}
+      <p class="empty">No categories yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="contact-strip">
+  <div>
+    <p class="eyebrow">Need it fast?</p>
+    <h2>Call the store or get directions.</h2>
+    <p class="lede">Items move quickly. Confirm availability before you head over.</p>
+  </div>
+  <div class="actions contact-actions">
+    <a class="button primary" href="tel:{{ store_settings.phone }}">Call Store</a>
+    <a class="button secondary" href="{{ maps_url }}">Directions</a>
   </div>
 </section>
 {% endblock %}

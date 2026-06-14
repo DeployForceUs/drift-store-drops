@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 from uuid import uuid4
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -32,6 +32,7 @@ from app.services.drop_service import (
     list_categories,
     list_category_published_drops,
     list_latest_published_drops,
+    list_visible_drops,
     publish_all_drafts,
     publish_drop,
     reset_demo_data,
@@ -319,10 +320,31 @@ def home(request: Request, db: Session = Depends(get_db)):
     """Homepage that highlights latest arrivals."""
 
     store_settings = get_store_settings(db)
+    recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+    selected_category_slug = request.query_params.get("category")
+    selected_category = None
+    if selected_category_slug:
+        selected_category = get_category_by_slug(db, selected_category_slug, active_only=True)
+
+    visible_drops = list_visible_drops(
+        db,
+        category_id=selected_category.id if selected_category is not None else None,
+    )
+    recent_count = sum(
+        1
+        for drop in list_visible_drops(db)
+        if drop.published_at is not None and drop.published_at >= recent_cutoff
+    )
     context = {
+        "request": request,
         "store_settings": store_settings,
         "categories": list_categories(db),
-        "drops": list_latest_published_drops(db, limit=6),
+        "active_categories": list_categories(db),
+        "drops": visible_drops,
+        "recent_count": recent_count,
+        "recent_cutoff": recent_cutoff,
+        "selected_category_slug": selected_category_slug if selected_category is not None else None,
+        "selected_category": selected_category,
         "is_open": is_store_open(store_settings),
         "maps_url": build_maps_url(store_settings),
     }
