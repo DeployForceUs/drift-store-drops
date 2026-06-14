@@ -42,7 +42,6 @@ body.public-shell {
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.38);
   background:
     radial-gradient(circle at top, rgba(201, 255, 60, 0.14), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(73, 91, 255, 0.08), transparent 24%),
     linear-gradient(180deg, #0c0f12 0%, #050608 100%);
   color-scheme: dark;
   min-height: 100%;
