@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="{% if request.url.path.startswith('/admin') %}admin-shell{% else %}public-shell{% endif %}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{{ store_settings.store_name if store_settings else "Drift Store Drops" }}</title>
+  <meta name="theme-color" content="{% if request.url.path.startswith('/admin') %}#f8f4ec{% else %}#050608{% endif %}">
   <link rel="stylesheet" href="{{ request.url_for('static', path='styles.css') }}">
 </head>
-<body>
+<body class="{% if request.url.path.startswith('/admin') %}admin-shell{% else %}public-shell{% endif %}">
   <header class="topbar">
     <a class="brand" href="/">Drift Store Drops</a>
     <nav class="topnav">
